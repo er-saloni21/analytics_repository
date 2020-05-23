@@ -264,4 +264,4 @@ random_forest_final <- randomForest(Price~.,data=estate_train_data, mtry=best.m,
 estate_test_data$random <- predict(random_forest_final, estate_test_data)
 
 
-write.csv(estate_test_data$random,"submission1.csv",row.names=F)
+write.csv(estate_test_data$random,"result_price_analysis.csv",row.names=F)
