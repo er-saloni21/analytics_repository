@@ -1,0 +1,339 @@
+---
+title: "EDA Final Project using Wage Dataset"
+papersize: a2
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+The project aims to perform Exploratory Data analysis on the Wage Dataset and find the predictors that play an important role in deciding the Hourly Wage in the model.
+
+
+
+```{r}
+#importing all the libraries used in the project
+library(dplyr)
+library(ggplot2)
+library(summarytools)
+library(vcd)
+library(ggpubr)
+library(fastDummies)
+library(corrplot)
+library(moments)
+```
+
+Soliution 1: Load a dataset from a CSV file
+```{r}
+#read data from csv file and store into dataframe
+wage_dataframe <- read.csv(file = 'wage.csv') 
+
+#displaying first 6 elemenents of the data via head
+head(wage_dataframe)
+```
+
+```{r}
+#converting married variable to factor before starting with analysis
+wage_dataframe$married <- factor(wage_dataframe$married) 
+```
+
+Solution 2: Display descriptive statistics about the dataset
+```{r}
+#creating vector containing the column names for only numerical variables
+descriptive_columns <- c("hourly_wage","years_in_education","years_in_employment","num_dependents")
+
+#show descriptive stats for the mentioned column names only(numerical)
+summary(wage_dataframe[descriptive_columns])
+
+```
+From the result of the descriptive statistics, it is clear that maximun hourly wage is nearly 4 times its average while the average accumulates to 1.8 times first quartile or 25% of the hourly wage data. The range of number of dependents in our data is between 0 to 6 and mean of years in education is around 2.4 times the mean of years in employment.
+
+```{r}
+#showing descriptive statistics for categorical variables only i.e married,race and gender
+
+cross<-table(wage_dataframe$race,wage_dataframe$gender,wage_dataframe$married)
+round(prop.table(cross,2)*100,digits=0)
+
+```
+From the above table it is evident that white people have majority of population in race, there is not much difference in proportion of male and female and married have greater population than unmarried
+
+
+Solution 4: Check if any records in the data have any missing values; handle the missing data as appropriate (interpolate missing values, delete records with missing values, etc).
+```{r}
+#sapply function here takes dataframe as input and provides vector or matrix output.
+#here it calculates the sum of NA'sfor all variables of the dataset
+sapply(wage_dataframe, function(x) sum(is.na(x))) 
+```
+Once NA's are detected, we need to perform data preparation and manuplation for smooth analysis
+
+```{r}
+#removing the records in dataset which are having no values for married column
+wage_dataframe= wage_dataframe[!is.na(wage_dataframe$married),]
+
+#DisplayPrep function definition
+DisplayPrep = function(data,var,round_rum=0)
+{
+#storing the average of column(acc to var value) for the records having no value for that particular column.
+data[is.na(data[,var]),var]= mean(data[,var],na.rm=T)
+
+#rounding the specified column to particular number of digits according to round_rum value
+data[,var]= round(data[,var], round_rum)
+
+return(data[,var]) #returning values to be assigned to variable of calling function
+}
+
+
+
+#here DisplayPrep function passes dataframe name as first argument, column name as second argument and round value as third argumment(to round off the particular column to mentioned no. of digits)
+
+return_val=DisplayPrep(wage_dataframe,"hourly_wage",2) 
+wage_dataframe$hourly_wage<-return_val            #assigning values to hourly_wage column of dataframe
+
+return_val=DisplayPrep(wage_dataframe,"years_in_education",0)
+wage_dataframe$years_in_education<-return_val      #assigning values to years_in_education column of dataframe
+
+return_val=DisplayPrep(wage_dataframe,"years_in_employment",0)
+wage_dataframe$years_in_employment<-return_val    #assigning values to years_in_employment column of dataframe
+
+return_val=DisplayPrep(wage_dataframe,"num_dependents",0)
+wage_dataframe$num_dependents<-return_val          #assigning values to num_dependents column of dataframe
+
+
+#removing the records in dataset which are having no values for gender column
+wage_dataframe= wage_dataframe[!(wage_dataframe$gender==""),]
+#removing the records in dataset which are having no values for race column
+wage_dataframe= wage_dataframe[!(wage_dataframe$race==""),]
+
+#resultant data after data cleaning
+summary(wage_dataframe)
+
+```
+Solution 3:Build a graph visualizing (some of) the numerical variables of the dataset
+```{r}
+ pairs(~hourly_wage+ years_in_education + years_in_employment + num_dependents, data = wage_dataframe)
+```
+
+
+From the above visualization graph it is evident that positive linear relationship exists between hourly wage and years of education. However, that data is randomly distributed for years in employment and hourly wage.Also, the Hourly wage is inversely proportional to number of dependents(houly wage decreases with increase in number of dependents and vice versa)
+
+
+Solution5: Display the distribution of (some of) numerical variables as histograms. Provide verbal comments on the graph.
+```{r}
+#plotting histogram
+hist(wage_dataframe$years_in_employment,freq = FALSE,col=c("violet", "chocolate2"), xlab ="years in employment", las =1, main="Line Histogram")
+
+#lines plot the density for years_in_employment on histogram shown by red line
+lines(density(wage_dataframe$years_in_employment), lwd = 4, col = "red") 
+```
+
+
+The above histogram displays the height as an years in employment on x-axis and density is plotted on the y-axis. The density representation depicts the  rate of change of years_in_employment. Also, the histogram is positively skewed and not following normal distribution for years in employment variable.
+
+Solution 6:Display unique values of a categorical variable
+```{r}
+
+DisplayUnique = function(data,var)
+{
+  t= table(data[,var])
+  
+  cat("The unique values for categorical variable", var, "is \n")
+  
+  #printing the unique values for particular categorical column
+  print(rownames(t))  
+  
+  #plotting the barplot to depict the occurances of unique values of particular categorical variable
+  barplot(t)     
+}
+
+#display unique values for gender column
+DisplayUnique(wage_dataframe,"gender") 
+
+#display unique values for married column
+DisplayUnique(wage_dataframe,"married") 
+
+#display unique values for race column
+DisplayUnique(wage_dataframe,"race") 
+
+```
+
+
+solution 7: Build a contingency table of two potentially related categorical variables. Conduct a statistical test of the independence between the variables. Provide verbal comments on the output.
+```{r}
+#ctable in summarytools package helped to build the contingency table between the 2 categorical variable in my data which is married and gender
+#totals is set to false to avoisd calculation of rows and column values and chisq is set to true to calculate the test to check the independence between 2 variables
+with(wage_dataframe, 
+     print(ctable(x = married, y = gender, prop = 'n',
+                  totals = FALSE, headings = FALSE,chisq = TRUE),
+           method = "render"))
+```
+
+The p-value of chi square test less than 0.05 so we reject the null hypothesis of independence between the two variables. In our context, this indicates that married and  gender are dependent on each other and significant relationship exists between the two variables.
+Also, married males have highest population than all the 4 groups and unmarried  males have lowest.
+Married female have higher proportion than unmarried females.
+
+
+```{r}
+#Mosiac graph depicts the visula representation between married and gender where each tile reflects the cell frequency and color reflects the statistical significance
+vcd::mosaic( ~ married + gender, data = wage_dataframe, gp=shading_max, split_vertical=T)  
+
+```
+
+From the Mosiac graph it is evident that Males who are married have highest majority than all the combinations and females have higher proprtion of being unmaried than males.
+
+Solution 8. Retrieve a subset of the data based on two or more criteria and present descriptive statistics on the subset. Provide verbal comments on the output.
+
+```{r}
+#built subset to group the dataset by race and filter according to two conditions i,e gender to be equal to female and number of dependents to be greater than 3
+wage_dataframe_subset= wage_dataframe %>% group_by(race) %>% filter(gender=="female",num_dependents>3) 
+
+
+summary(wage_dataframe_subset) #display descriptive statistics
+```
+THe summary statistics shows that with number of dependents being greater than 3, the mean of the same is 4.4 and mean of hourly wage is 3.859pounds and mean of year_in_education is 7 times the mean of years_in_employment
+
+
+Solution 9. Conduct a statistical test of the significance of the difference between the means of two subsets of the data. Provide verbal comments
+```{r}
+t.test(formula = hourly_wage ~ race, #independent sample T test for Hourly wage and race
+       data = wage_dataframe)
+```
+Independent sample T test is conducted to test the significance of difference of mean according to subset of  mean hourly wage for race group white vs  mean hourly wage for race group non white.
+
+INTERPRETATION
+The p-value of the test is 0.4806, which is greater than the significance level alpha = 0.05. We can conclude that group white average Hourly wage is not significantly different from group non-white average Hourly wage
+
+t is the t-test statistic value (t = -0.70891),
+df is the degrees of freedom (df= 73.064),
+p-value is the significance level of the t-test (p-value = 0.4806).
+conf.int is the confidence interval of the means difference at 95% (conf.int = [-1.231315, 0.585175]);
+sample estimates is the mean value of the sample (mean =5.645741,5.968811).
+```{r}
+#using ggboxplot to visualize significance between houry wage mean for both the groups of race
+bxp <- ggboxplot(
+  wage_dataframe, x = "race", y = "hourly_wage", 
+  ylab = "Hourly Wage", xlab = "Race", add="jitter"
+  )
+bxp +
+  labs(subtitle = "Independent sample T test visualization")
+```
+
+Solution 10: Create pivot tables, i.e., create a table that groups the data by a certain categorical variable and displays summaries for each categorical variable. Provide verbal comments.
+```{r}
+#Grouping dataframe by race and gender and created new column mean_hourly_wage to store mean of hourly wage
+#and count to store the no of occurances
+wage_dataframe %>% group_by(race,gender) %>% summarise(Mean_houry_wage= mean(hourly_wage),count=n())         
+```
+The above table depicts that white males have highest majority as compared to all 4 groups. Also the mean of white males is highest while non-white females is the lowest
+```{r}
+#grouping dataframe by married and filter according to race equal to white and created new column mean_hourly_wage to store mean of hourly wage
+wage_dataframe %>% group_by(married) %>% filter(race=="white") %>% summarize(Mean_houry_wage= mean(hourly_wage))
+```
+
+This depicts that average of hourly wage for married whites is more than unmarried whites.
+
+
+Solution 11: Implement a linear regression model and interpret its output.
+
+```{r}
+#before implementing linear regression we need to create dummy variables for the categorical columns and storing in new dataframe-wage_df
+wage_df = dummy_cols(wage_dataframe, select_columns = c('gender','race','married'))
+
+#since n-1 dummy variables are need to represent n categorical variable
+
+#deleting the columns which are not needed 
+wage_df$married<-NULL
+wage_df$gender<-NULL
+wage_df$race<-NULL
+
+
+wage_df$married_1<-NULL
+wage_df$race_white<-NULL
+wage_df$gender_male<-NULL
+
+str(wage_df)
+```
+
+```{r}
+#implementing linear model 
+#here hourly_wage is dependent variable and the other after ~ are independent variable
+model = lm(hourly_wage ~married_0 + race_nonwhite + gender_female + num_dependents + years_in_employment+years_in_education, data=wage_df)
+
+
+
+summary(model)  #showing the model summary
+```
+From the above summary table, it is evident that race_nonwhite has highest p value. so we need to remove it and perform the linear regression again
+```{r}
+model = lm(hourly_wage ~married_0 - race_nonwhite + gender_female + num_dependents + years_in_employment+years_in_education, data=wage_df)
+
+summary(model)
+```
+From the above summary table, it is evident that num_dependents has highest p value. so we need to remove it and perform the linear regression again
+
+```{r}
+  model = lm(hourly_wage ~married_0 - race_nonwhite + gender_female - num_dependents + years_in_employment+years_in_education, data=wage_df)
+
+summary(model)
+```
+The above table obtained is the most parsimonious model as all the independent variables are significantly related to the dependent variable i.e Hourly wage as the p values for all is less than 0.05.
+
+CONCLUSION:
+1. Variable married_0 and gender_female are inversely proportional to hourly wage
+For Instance: if no. of unmarried person is increased by 1 then houly wage will decrease by 0.76079 pounds. If no. of female person is increased by 1 then houly wage will decrease by 1.70827 pounds. 
+
+
+2. Variable years_in_employment and years_in_education are directly proportional to hourly wage  
+For Instance: if no. of years in employment is increased by 1 then houly wage will increase by 0.15063 pounds. If no. of years in education is increased by 1 then houly wage will increase by 0.50802 pounds. 
+
+```{r}
+ #to check the coorelation between the dependent and all the independent variables
+ 
+res= cor(wage_df, use="complete.obs", method="pearson")
+
+#rounding off  correlation matrix values to 2 decimal places and displaying the results
+round(cor(wage_df),2)
+```
+From the coorelation analysis, it can be inferred that no independent variable is highly correlated with dependent variable i.e hourly wage
+
+```{r}
+#visualization for correlation
+corrplot(res, type = "upper", order = "hclust", 
+         tl.col = "black", tl.srt = 45)
+
+```
+
+
+**Coefficients on the variables**. The  coefficients has been estimated as per the most parsimonious model. Our model is thus described by the line: 
+ 
+**hourly_wage = -0.45041-0.70078*married_0+0.03850*race_nonwhite-1.71540*gender_female+0.12625*num_dependents+0.15208*years_in_employment + 0.52171* years_in_education**
+
+
+
+RESIDUAL ANALYSIS
+
+we can plot the standardized residuals and their histogram to confirm if the the assumptions of normality of the distribution of residuals and of the zero mean of residuals are valid with this model.
+
+```{r}
+st_resids = rstandard(model)
+
+plot(x=model$fitted.values, y=st_resids, abline(h=0), xlab="Standardized residuals", ylab="Fitted values", main = "Residual plot")
+
+
+hist(st_resids, xlab="Standardized residuals", breaks=10)
+```
+
+The scatterplot and the histogram suggest the residuals are not equally distributed around 0 and are doesnt follow normal distribution.
+
+```{r}
+jarque.test(st_resids) #performing Jarque-Bera test
+```
+From Jarque-Bera test indicates that the residuals are not normally distributed as the p value is below the 0.05 significance level.
+ 
+ 
+
+**CONCLUSION**
+To conclude, the model is not at all a good choice to estimate the hourly wage according to independent variables of the parsimonious model as the adjusted R square value is 0.3474 which means that model is able to explain only 34.7% of variance for dependent variable i.e Hourly wage which is explained by independent variables-married_0, gender_female, years_in_employment and years_education
+
+Also it can be summarized that by removal of some of the non-significant variables, the model quality has improved slightly from 0.3465(adj R square for initial model) to 0.3474(adj. R square for parsimonius model).
+
+The multicolinearity does not exists in our model
