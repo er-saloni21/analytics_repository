@@ -1,0 +1,289 @@
+---
+title: "Descriptive manuplation and preparation"
+output: html_notebook
+---
+
+
+
+```{r}
+getwd()
+df <- read.csv(file = 'zoopla_sales.csv') #read data from csv file and store into dataframe
+
+head(df ) #displaying first 6 elemenents of the data via head
+View(df)
+```
+
+Droping the column which is not required i.e X
+
+```{r}
+df$X <- NULL
+```
+ 
+Checking for summmary and sum of na values of the dataframe
+
+```{r}
+summary(df)
+for(col in names(df))
+{
+if(sum(is.na(df$col))>0)
+{
+  print("colname is\n")
+  print(col)
+}
+}
+
+#or use following
+sapply(df, function(x) sum(is.na(x)))
+```
+AS there is no NA, next step is to check for the correct values of price
+
+
+exclude poa from dataframe
+```{r}
+
+df <- df[!(df$Price=="POA"),]
+
+
+```
+
+```{r}
+# table(df$Price)
+df$Price= as.numeric(gsub("\\D", "", df$Price))
+
+```
+Treating house types
+```{r}
+library(stringr)
+
+#gsub('end terrace', 'end_terrace', df$House_Type) 
+#df$House_Type <- str_replace_all(df$House_Type,"end terrrace","end_terrrace")
+# df$House_Type <- gsub("\\s+(?:end terrace|terraced)$", "hhhhhhhhhhhhh", df$House_Type)
+# table(df$House_Type)
+# View(df)
+
+df$House_Type = gsub("end terrace","end_terrace",df$House_Type)
+
+
+search_terms = c("terraced","property","studio","detached","maisonette","end_terrace","houseboat","mews" ,"semi-detached","flat", "town","garage")
+regex = paste(search_terms, collapse="|")
+df$House_type_match = sapply(str_extract_all(tolower(df$House_Type), regex), function(x) paste(x, collapse=";"))
+
+table(df$House_type_match)
+
+View(df)
+str(df)
+```
+Treating empty stations and ports
+
+```{r}
+
+# df$Stations[which(df$Stations=="[]")]<-0
+# df$Ports[which(df$Ports=="[]")]<- 0
+
+for(i in 1:nrow(df))
+{
+  #print(length(df$Stations[i]))
+  if(df$Stations[i]!="[]")
+  {
+    split_data_station= as.list(strsplit(df$Stations[i], ","))
+    df$stations_total[i]= lengths(split_data_station)
+  }
+  else
+  {
+    df$stations_total[i]= 0
+    print(df$stations_total[i])
+  }
+}
+
+
+for(i in 1:nrow(df))
+{
+  #print(length(df$Stations[i]))
+  if(df$Ports[i]!="[]")
+  {
+    split_data_port= as.list(strsplit(df$Ports[i], ","))
+    df$ports_total[i]= lengths(split_data_port)
+  }
+  else
+  {
+    df$ports_total[i]= 0
+    print(df$ports_total[i])
+  }
+}
+
+df$Stations <- NULL
+df$Ports <- NULL
+
+table(df$stations_total)
+
+table(df$ports_total)
+
+df$ports_total <- NULL #as no of ports is less than that of no of stations 
+View(df)
+
+```
+treat bedroom and bathrooms and drop housetype column and frequency on House_type_match
+
+Treatment for bathrooms as the zoopla webpage shows 0 bathrooms for any number of bedrooms
+```{r}
+table(df$Bathrooms)
+View(df$Bathrooms)
+# df[(df$Bedrooms==0),] <-  df[(df$Bathrooms/2),]
+# df$Bedrooms[which(df$Bedrooms==0)]<- df$Bedrooms[df$Bathroom)]
+#df$Bedrooms[which(df$Bedrooms==0)] <- df$Bathrooms/2
+
+# for(j in 1:nrow(df))
+# {
+#   for(k in 1:ncol(df))
+#   {
+#     # age_wealth_total[j,k] <- mean(c(age_wealth1[j,k], age_wealth2[j,k], age_wealth3[j,k], age_wealth4[j,k], age_wealth5[j,k]))
+#     print(df[j,k])
+#     
+#     
+#   }
+# }
+
+# for(i in 1:nrow(df.Bedrooms)) 
+# {
+#  print(i)
+# }
+# count=nrow(df$Bedrooms)
+# for(i in 1:length(df$Bedrooms)){
+# #print(df$Bedrooms[i])
+#  if(df$Bedrooms[i]==0)
+#  {
+#   print(df$Bedrooms[i])
+#         #= round((df$Bathrooms[i])/2)
+#  }
+# }
+for (row in 1:nrow(df)) {
+   # price <-
+      if(df[row, "Bathrooms"]==0)
+      {
+       df[row, "Bathrooms"]= ceiling((df[row, "Bedrooms"])/2)
+      }
+        
+   # date  <- stock[row, "date"]
+
+    # if(price > 117) {
+    #     print(paste("On", date, 
+    #                 "the stock price was", price))
+    # }
+}
+table(df$Bathrooms)
+View(df$Bathrooms)
+View(df)
+```
+Treatment for bedrooms
+
+
+
+```{r}
+
+table(df$Bedrooms)
+for (row in 1:nrow(df)) {
+
+      if((df[row, "Bedrooms"]==0) &  (df[row, "Bathrooms"]!=0))
+      {
+       df[row, "Bedrooms"]= df[row, "Bathrooms"]
+      }
+
+}
+
+table(df$Bedrooms)
+
+for (row in 1:nrow(df)) {
+
+      if((df[row, "House_type_match"]=="studio") &  ((df[row, "Bathrooms"]==0)|(df[row, "Bedrooms"]==0)))
+      {
+       df[row, "Bedrooms"] = 1
+       df[row, "Bathrooms"]= 1
+      }
+
+}
+table(df$Bedrooms)
+```
+dropping original house type
+
+```{r}
+df$House_Type <-NULL
+```
+dropping house type matches according to frequency level
+
+```{r}
+table(df$House_type_match)
+```
+
+
+
+```{r}
+
+
+CreateDummies = function(data,var,freq_cutoff=0)
+{
+  t= table(data[,var])
+  
+  t= t[t>freq_cutoff]
+  t=sort(t)
+  return(names(t))
+
+#   df= df[,!names(estate_combine) %in% c("Method","estate_combineSA")]
+# for (row in 1:nrow(df)) {
+# 
+#       if((df[row, "House_type_match"]=="Studio") &  ((df[row, "Bathrooms"]==0)|(df[row, "Bedrooms"]==0)))
+#       {
+#        df[row, "Bedrooms"] = 1
+#        df[row, "Bathrooms"]= 1
+#       }
+# 
+# }
+#   
+
+  # categories= names(t)[-1]
+  # for( cat in categories){
+  #   name=paste(var,cat,sep="_")
+  #   name=gsub(" ","",name)
+  #   name=gsub("-","_",name)
+  #   name=gsub("\\?","Q",name)
+  #   name=gsub("<","LT_",name)
+  #   name=gsub("\\+","",name)
+  #   
+  #   
+  #   data[,name]=as.numeric(data[,var]==cat)
+  # }
+  # 
+  # data[,var]=NULL  #drop table
+  # return(data)
+  
+}
+
+
+
+house_type_categories= CreateDummies(df,"House_type_match",10)
+```
+
+```{r}
+
+print(house_type_categories)
+
+  df <- df[df$House_type_match %in% house_type_categories, ] #take the data from house type matches whose frequency was greater than 10
+
+  table(df$House_type_match) 
+
+ # df$House_type_match = as.factor(df$House_type_match)
+   df$House_type_order =   as.numeric(factor(df$House_type_match))
+   df$House_type_match <- NULL
+     summary(df)
+     str(df)
+
+
+  write.csv(df,'zoopla_final_data.csv') #final data obtatined after data manuplation and preparation
+```
+
+```{r}
+summary(df)
+View(df)
+#pairs(~Price+ Bedrooms + Bathrooms, data = df)
+```
+
+
