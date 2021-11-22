@@ -1,0 +1,2 @@
+Write a code, either in a R script or in a RStudio notebook, to solve the exercise. Assume that we have registered the height and weight for four people:  Heights in cm are 180, 165, 160, 193; weights in kg are 87, 58, 65, 100.  Make two vectors, height and weight, with the data. The bodymass index (BMI) is defined as (weight in kg)/(height in m)^2.
+Make a vector with the BMI values for the four people. Make a vector with actual weights for those people who have a BMI larger than 25.
