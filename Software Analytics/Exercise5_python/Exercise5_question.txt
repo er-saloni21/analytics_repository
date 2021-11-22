@@ -1,0 +1,1 @@
+there is market survey data collected by a car manufacturing firm. The company want to determine if the model appeal is dependent on the age group. What can the manufacturer conclude based on the data? Write 2-3 sentences describing your findings.
