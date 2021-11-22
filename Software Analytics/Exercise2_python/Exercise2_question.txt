@@ -1,0 +1,7 @@
+Implement code containing the following functions:
+1. A function that takes a number and returns a list of its all possible factors (e.g., for 10, these are [1, 2, 5, 10]). Name this function "factors".
+2. A function that takes a number and returns True if the number is prime and False if the number is not prime (reuse the previous function!). E.g., for 7 it should return True, for 8 it should return False. Name this function "is_prime".
+3. A function that takes two numbers and returns their Highest Common Factor (e.g., for 12 and 18, it is 6). Name this function "hcf".
+Make sure the functions in steps 2 and 3 use the function in step 1. At the same time, make sure that each function works on its own.
+Add comments to each function, to document what it does, what are its arguments and return values.
+Write the code to use the function, making sure that they return the expected output.
