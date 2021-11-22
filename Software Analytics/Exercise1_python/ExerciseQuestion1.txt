@@ -1,0 +1,6 @@
+Write the code that:
+1. Reads the contents of "aston.txt" (please see the attachment)
+2. Finds all unique words from the file, that is, a list of all words that appeared at least once in the text. For example, in "This is a cat and this is a dog", the unique words are: "this", "is", "a", "cat", "and", "dog". For the purposes of this assignment, consider a word to be any sequence of characters between two whitespaces.
+3. Prints them to a file called "unique_words.txt", sorted alphabetically
+4. Finds the longest word in the file and prints it to the screen
+Please use comments to specify what each line of your code does. Each line must be commented!
