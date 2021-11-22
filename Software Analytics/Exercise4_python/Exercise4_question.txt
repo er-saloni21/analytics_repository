@@ -1,0 +1,9 @@
+Download the file called "movie-lens-ratings.csv" (the data is also available at http://grouplens.org/datasets/). The data comes from a movie review website. Each row is a review, and the columns are the id of the author of the review, the id of the movie being reviewed, the time when the review was published, and the rating of the movie.
+
+Answer the following questions:
+1. How many reviews are there with missing ratings?
+2. How many unique reviewers are there? How many unique movies?
+3. How many reviews did each reviewer write on average?
+4. How many reviews did each movie receive on average?
+5. How many reviews are there with the score of 5? With the score of 1?
+6. What is the distribution of mean scores of the movies? First build a dataframe containing mean scores for each movie, then create a histogram from this dataframe (df.hist) with 20 bins.
