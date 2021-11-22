@@ -1,0 +1,7 @@
+Below is a class called Dog that has the attributes age and name. Use this class to create three Dog instances, each instance with a different name and different age. Put the instances into a list. Write a function that takes a list of dogs and returns the instance with the greatest age. The output must be in this format: "The oldest dog is Rex, its age is 10 years old."
+
+class Dog:
+    
+    def __init__(self, age, name):
+        self.age = age
+        self.name = name
